@@ -41,10 +41,13 @@ export function completeDirectoryPaths(prefix: string, cwd: string): DirectoryCo
     description: path.join(searchDir, name),
   });
 
-  // Offer `./` and `../` so typing `.` or `..` opens the dropdown and can keep
-  // drilling into the current or parent directory.
+  // Offer `./` and `../` so typing `.` or `..` opens the dropdown. Only offer them
+  // where they lead somewhere new: `./` at the start, `../` at the start or after `../`.
+  const atStart = typedParent === "";
+  const afterParent = typedParent === "../" || typedParent.endsWith("/../");
   const navigation = [".", ".."]
-    .filter(name => name.startsWith(partialName) && partialName.startsWith("."))
+    .filter(name => (name === "." ? atStart : atStart || afterParent))
+    .filter(name => partialName.startsWith(".") && name.startsWith(partialName))
     .map(toCompletion);
 
   const suggestions = entries

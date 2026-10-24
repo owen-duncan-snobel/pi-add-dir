@@ -54,7 +54,7 @@ Then `/reload` in pi.
 /remove-dir /Users/me/other-project
 ```
 
-`/add-dir` suggests matching directories as you type a path. Relative paths resolve from pi's current working directory, and `~/` resolves to your home directory. Matching is case-insensitive, includes symlinked directories, and hides dot-directories until you type a leading `.`. Selecting a suggestion keeps the trailing `/`, so you can keep typing to browse nested directories.
+`/add-dir` suggests matching directories as you type a path. Relative paths resolve from pi's current working directory, and `~/` resolves to your home directory. Matching is case-insensitive, includes symlinked directories, and hides dot-directories until you type a leading `.`. Press Tab to accept a suggestion and keep typing to browse nested directories. With the suggestion list closed, Tab falls back to pi's built-in file completion, which also lists files.
 
 ### LLM Tools
 

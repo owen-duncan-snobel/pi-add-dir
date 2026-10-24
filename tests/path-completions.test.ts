@@ -94,6 +94,24 @@ describe("completeDirectoryPaths", () => {
     expect((completeDirectoryPaths("..", cwd) ?? []).map((item) => item.value)).toEqual(["../"]);
   });
 
+  it("lists the parent directory for a bare ../ prefix", () => {
+    const child = path.join(cwd, "frontend");
+    expect((completeDirectoryPaths("../", child) ?? []).map((item) => item.value)).toEqual([
+      "../fraud-service/",
+      "../frontend/",
+    ]);
+  });
+
+  it("only offers ./ and ../ where they lead somewhere new", () => {
+    expect((completeDirectoryPaths("frontend/.", cwd) ?? []).map((item) => item.value)).toEqual([]);
+    expect((completeDirectoryPaths("./.", cwd) ?? []).map((item) => item.value)).toEqual(["./.hidden/"]);
+    const child = path.join(cwd, "frontend");
+    expect((completeDirectoryPaths("../.", child) ?? []).map((item) => item.value)).toEqual([
+      "../../",
+      "../.hidden/",
+    ]);
+  });
+
   it("completes directories in the parent directory", () => {
     const child = path.join(cwd, "frontend");
     expect(completeDirectoryPaths("../fr", child)).toEqual([
