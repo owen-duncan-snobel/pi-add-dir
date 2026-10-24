@@ -31,7 +31,10 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { completeDirectoryPaths } from "./path-completions.js";
+import { expandTilde } from "./paths.js";
 import { suggestDirectories } from "./suggestions.js";
+
+export { expandTilde };
 
 // ---------------------------------------------------------------------------
 // Types
@@ -79,13 +82,7 @@ const EXTENSION_DIRS = [
   ".pi/extensions",
 ];
 
-const TILDE_PREFIX = process.platform === "win32" ? /^~(?:[\\/]|$)/ : /^~(?:\/|$)/;
 const NAMED_USER_TILDE_PREFIX = process.platform === "win32" ? /^~[^/\\]+[\\/]/ : /^~[^/\\]+\//;
-
-export function expandTilde(input: string): string {
-  const prefix = input.match(TILDE_PREFIX)?.[0];
-  return prefix ? path.join(os.homedir(), input.slice(prefix.length)) : input;
-}
 
 function isNamedUserTilde(input: string): boolean {
   return NAMED_USER_TILDE_PREFIX.test(input);
@@ -601,7 +598,7 @@ export default function addDirExtension(pi: ExtensionAPI) {
   pi.registerCommand("add-dir", {
     description: "Add an external directory to this session (shows suggestions when called without args)",
     getArgumentCompletions(prefix: string) {
-      return completeDirectoryPaths(prefix, currentCwd);
+      return completeDirectoryPaths(prefix, currentCwd || process.cwd());
     },
     handler: async (args, ctx) => {
       let inputPath = args?.trim();

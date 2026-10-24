@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **feat:** `/add-dir` suggests matching directories as you type, including relative, absolute, `~/`, and symlinked directory paths
 - **fix:** Queue skill reload without injecting a custom message mid-tool execution, preventing session tree corruption
 
 

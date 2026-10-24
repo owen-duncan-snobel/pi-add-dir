@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
@@ -46,10 +46,10 @@ describe("completeDirectoryPaths", () => {
   });
 
   it("completes absolute directory paths", () => {
-    const prefix = `${cwd}${path.sep}front`;
+    const prefix = `${cwd}/front`;
     expect(completeDirectoryPaths(prefix, cwd)).toEqual([
       {
-        value: `${cwd}${path.sep}frontend/`,
+        value: `${cwd}/frontend/`,
         label: "frontend/",
         description: path.join(cwd, "frontend"),
       },
@@ -63,5 +63,86 @@ describe("completeDirectoryPaths", () => {
 
   it("returns null when the parent directory cannot be read", () => {
     expect(completeDirectoryPaths("missing/path", cwd)).toBeNull();
+  });
+
+  it("matches directory names case-insensitively", () => {
+    fs.mkdirSync(path.join(cwd, "Frameworks"));
+    expect((completeDirectoryPaths("fra", cwd) ?? []).map((item) => item.value)).toEqual([
+      "Frameworks/",
+      "fraud-service/",
+    ]);
+  });
+
+  it("includes symlinks that point to directories, but not to files", () => {
+    fs.symlinkSync(path.join(cwd, "frontend"), path.join(cwd, "linked"));
+    fs.symlinkSync(path.join(cwd, "file.txt"), path.join(cwd, "linked-file"));
+    expect(completeDirectoryPaths("li", cwd)).toEqual([
+      {
+        value: "linked/",
+        label: "linked/",
+        description: path.join(cwd, "linked"),
+      },
+    ]);
+  });
+
+  it("offers ./ and ../ so dot prefixes open the dropdown", () => {
+    expect((completeDirectoryPaths(".", cwd) ?? []).map((item) => item.value)).toEqual([
+      "./",
+      "../",
+      ".hidden/",
+    ]);
+    expect((completeDirectoryPaths("..", cwd) ?? []).map((item) => item.value)).toEqual(["../"]);
+  });
+
+  it("completes directories in the parent directory", () => {
+    const child = path.join(cwd, "frontend");
+    expect(completeDirectoryPaths("../fr", child)).toEqual([
+      {
+        value: "../fraud-service/",
+        label: "fraud-service/",
+        description: path.join(cwd, "fraud-service"),
+      },
+      {
+        value: "../frontend/",
+        label: "frontend/",
+        description: path.join(cwd, "frontend"),
+      },
+    ]);
+  });
+
+  describe("home directory paths", () => {
+    let home: string;
+
+    beforeEach(() => {
+      home = fs.mkdtempSync(path.join(os.tmpdir(), "pi-add-dir-home-"));
+      fs.mkdirSync(path.join(home, "projects"));
+      vi.stubEnv("HOME", home);
+      vi.stubEnv("USERPROFILE", home);
+    });
+
+    afterEach(() => {
+      vi.unstubAllEnvs();
+      fs.rmSync(home, { recursive: true, force: true });
+    });
+
+    it("expands ~/ while preserving the typed prefix", () => {
+      expect(completeDirectoryPaths("~/pro", cwd)).toEqual([
+        {
+          value: "~/projects/",
+          label: "projects/",
+          description: path.join(home, "projects"),
+        },
+      ]);
+    });
+
+    it("completes a bare ~ to ~/", () => {
+      expect(completeDirectoryPaths("~", cwd)).toEqual([
+        { value: "~/", label: "~/", description: home },
+      ]);
+    });
+
+    it("does not expand named-user ~user paths", () => {
+      expect(completeDirectoryPaths("~someone/pro", cwd)).toBeNull();
+    });
   });
 });
